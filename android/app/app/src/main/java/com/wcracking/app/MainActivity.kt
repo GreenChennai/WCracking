@@ -39,9 +39,12 @@ class MainActivity : AppCompatActivity() {
         btnScan = findViewById(R.id.btn_scan)
         btnAttack = findViewById(R.id.btn_attack)
 
-        // 检查 root
-        val rooted = runCatching { Shell.getShell().isRoot }.getOrDefault(false)
-        appendLog(if (rooted) "[+] 已获取 root" else "[-] 未获取 root（WPS 攻击需要 root）")
+        // 检查 root（libsu 6.x 回调式 API）
+        Shell.getShell { shell ->
+            runOnUiThread {
+                appendLog(if (shell.isRoot) "[+] 已获取 root" else "[-] 未获取 root（WPS 攻击需要 root）")
+            }
+        }
 
         // 释放内置脚本
         runCatching { extractAssets() }
