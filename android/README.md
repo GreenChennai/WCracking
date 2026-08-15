@@ -14,7 +14,10 @@
 | 文件 | 说明 |
 |------|------|
 | `install.sh` | Termux 一键安装脚本（装依赖 + 拉取 OneShot + pixiewps） |
-| `pixiewps`（由 CI 产出） | NDK 交叉编译的安卓二进制（可选，Termux 也可直接 `pkg install pixiewps`） |
+| `WCracking-termux.zip`（由 CI 产出） | Termux 工具包：纯 Python 离线引擎 `core/` + 安装脚本 + 文档（解压即用） |
+
+> 注：`pixiewps`、`wpa-supplicant`、`iw` 等依赖直接由 Termux 提供（`pkg install pixiewps`），
+> 无需本仓库交叉编译。
 
 ## 前置条件
 

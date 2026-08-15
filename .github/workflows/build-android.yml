@@ -1,61 +1,39 @@
 name: Build Android
 
 # 触发：推送 v* 标签，或手动 dispatch
-# 说明：pixiewps 仅依赖 libc + pthread，可用 NDK clang 直接交叉编译出安卓二进制。
-#       bionic 提供 getopt_long（API 12+），故可正常编译。
+# 说明：安卓端主动攻击走 OneShot + Termux + root，依赖均由 Termux 提供
+#       （`pkg install pixiewps wpa-supplicant iw ...`），无需本仓库编译 C 二进制。
+#       本 workflow 打包「Termux 工具包」：纯 Python 离线引擎 + 一键安装脚本 + 文档。
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build-pixiewps-android:
+  build-termux-toolkit:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        abi: [arm64-v8a, armeabi-v7a, x86_64]
-    env:
-      NDK_VER: r26d
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Clone pixiewps
-        run: git clone --depth 1 https://github.com/wiire-a/pixiewps.git /tmp/pixiewps
-
-      - name: Download Android NDK
+      - name: Package Termux toolkit
         run: |
-          curl -sSL -o /tmp/ndk.zip "https://dl.google.com/android/repository/android-ndk-${NDK_VER}-linux.zip"
-          unzip -q /tmp/ndk.zip -d /tmp
-          echo "NDK_HOME=/tmp/android-ndk-${NDK_VER}" >> "$GITHUB_ENV"
-
-      - name: Map ABI to NDK clang triplet
-        id: triplet
-        shell: bash
-        run: |
-          case "${{ matrix.abi }}" in
-            arm64-v8a)   echo "triplet=aarch64-linux-android21" >> "$GITHUB_OUTPUT" ;;
-            armeabi-v7a) echo "triplet=armv7a-linux-androideabi21" >> "$GITHUB_OUTPUT" ;;
-            x86_64)      echo "triplet=x86_64-linux-android21" >> "$GITHUB_OUTPUT" ;;
-          esac
-
-      - name: Build pixiewps for ${{ matrix.abi }}
-        run: |
-          cd /tmp/pixiewps
-          CC="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ steps.triplet.outputs.triplet }}-clang"
-          make clean
-          make CC="$CC"
-          mkdir -p /tmp/out
-          cp pixiewps "/tmp/out/pixiewps-${{ matrix.abi }}"
+          mkdir -p dist
+          zip -r dist/WCracking-termux.zip \
+            core android README.md LICENSE requirements.txt tests \
+            -x "*/__pycache__/*" "*.pyc"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pixiewps-${{ matrix.abi }}
-          path: /tmp/out/pixiewps-${{ matrix.abi }}
+          name: WCracking-termux
+          path: dist/WCracking-termux.zip
 
   release:
-    needs: [build-pixiewps-android]
+    needs: [build-termux-toolkit]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
@@ -67,4 +45,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           prerelease: true
-          files: artifacts/**/*
+          files: |
+            artifacts/WCracking-termux/WCracking-termux.zip
