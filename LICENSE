@@ -1,0 +1,22 @@
+# WCracking License
+
+WCracking 是 [pixiewps](https://github.com/wiire-a/pixiewps)（GPL-3.0）的衍生作品，
+因此整体遵循 **GNU General Public License v3.0（GPL-3.0）**。
+
+SPDX-License-Identifier: GPL-3.0-or-later
+
+完整许可证文本见：
+  https://www.gnu.org/licenses/gpl-3.0.txt
+
+核心算法与部分结构移植自：
+  - pixiewps  Copyright (c) 2015-2017, wiire <wi7ire@gmail.com>  (GPL-3.0)
+  - hmac_sha256（公有领域，rofl0r 为 pixiewps 编写）
+  - 各 PRNG 实现（glibc_random_yura 等，随 pixiewps 以 GPL-3.0 分发）
+
+所引用的独立开源项目各自保留其许可证：
+  - OneShot          GPL-2.0
+  - reaver-wps-fork-t6x  GPL-2.0
+  - pixiewps         GPL-3.0
+
+本软件**不提供任何担保**，仅限用于本人拥有或已获书面授权的网络进行安全审计。
+详见 README.md 的法律与授权声明。

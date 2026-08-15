@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# 构建产物
+build/
+dist/
+*.spec.bak
+*.exe
+
+# 运行时
+*.log
+.idea/
+.vscode/
+.DS_Store
+
+# 抓包临时数据
+*.run
+*.cap
+*.pcap
+captures/

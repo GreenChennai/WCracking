@@ -1,0 +1,2 @@
+# WCracking 桌面端依赖
+PyQt6>=6.6
