@@ -96,20 +96,20 @@ class MainActivity : AppCompatActivity() {
         runRoot("iw dev wlan0 scan", onLine = { lines.add(it) }, onDone = { code ->
             if (code != 0 && lines.isEmpty()) {
                 appendLog("[-] 扫描失败（退出码 $code），请确认已关系统 Wi-Fi 且 root 正常")
-                return@runOnUiThread
+            } else {
+                val results = parseScan(lines)
+                scanResults.clear()
+                scanResults.addAll(results)
+                val adapter = ArrayAdapter(
+                    this, android.R.layout.simple_list_item_1,
+                    results.map {
+                        val wpsTag = if (it.wps) "[WPS] " else ""
+                        "$wpsTag${it.ssid.ifBlank { "(隐藏SSID)" }} (${it.bssid})"
+                    }
+                )
+                lvScan.adapter = adapter
+                appendLog("[+] 扫描完成，共 ${results.size} 个网络（含 WPS 标记的为易受攻击目标）")
             }
-            val results = parseScan(lines)
-            scanResults.clear()
-            scanResults.addAll(results)
-            val adapter = ArrayAdapter(
-                this, android.R.layout.simple_list_item_1,
-                results.map {
-                    val wpsTag = if (it.wps) "[WPS] " else ""
-                    "$wpsTag${it.ssid.ifBlank { "(隐藏SSID)" }} (${it.bssid})"
-                }
-            )
-            lvScan.adapter = adapter
-            appendLog("[+] 扫描完成，共 ${results.size} 个网络（含 WPS 标记的为易受攻击目标）")
         })
     }
 
