@@ -1,6 +1,6 @@
 name: Build Windows
 
-# 触发：推送 v* 标签（与 MomentShift 同类约定），或手动 dispatch
+# 触发：推送 v* 标签，或手动 dispatch
 on:
   push:
     tags: ["v*"]
@@ -23,13 +23,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
 
-      # 离线引擎（纯 Python）打包为单个 exe，含 PyQt6 GUI
+      # 离线引擎为纯 Python（core/pixie_dust.py），打包为单个 exe，含 PyQt6 GUI
       - name: Build GUI exe (PyInstaller)
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed `
-            --name WCracking `
-            --add-data "core;core" `
-            desktop/app.py
+          pyinstaller --noconfirm --clean --onefile --windowed --name WCracking --paths . desktop/app.py
         shell: pwsh
 
       - name: Upload artifact
@@ -38,33 +35,8 @@ jobs:
           name: WCracking-windows
           path: dist/WCracking.exe
 
-  # 可选：交叉编译 C 原版 pixiewps 作为快速路径引擎
-  build-pixiewps-c:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Clone pixiewps
-        run: git clone --depth 1 https://github.com/wiire-a/pixiewps.git /tmp/pixiewps
-
-      - name: Install MinGW-w64
-        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
-
-      - name: Build pixiewps.exe
-        run: |
-          cd /tmp/pixiewps
-          make CC=x86_64-w64-mingw32-gcc
-          cp pixiewps pixiewps.exe || cp src/pixiewps pixiewps.exe
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pixiewps-windows
-          path: /tmp/pixiewps/pixiewps.exe
-
   release:
-    needs: [build-windows, build-pixiewps-c]
+    needs: [build-windows]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
@@ -78,4 +50,3 @@ jobs:
           prerelease: true
           files: |
             artifacts/WCracking-windows/WCracking.exe
-            artifacts/pixiewps-windows/pixiewps.exe

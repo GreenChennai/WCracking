@@ -241,8 +241,13 @@ class MainWindow(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    win = MainWindow()
-    win.show()
+    app.setApplicationName("WCracking")
+    try:
+        win = MainWindow()
+        win.show()
+    except Exception as e:  # noqa: BLE001
+        QMessageBox.critical(None, "启动失败", f"程序启动出错：\n{e}")
+        return 1
     return app.exec()
 
 

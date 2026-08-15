@@ -1,8 +1,8 @@
 name: Build Android
 
-# 触发：推送 v* 标签或手动 dispatch
-# 说明：pixiewps 仅依赖 libc + pthread，可用 NDK clang 直接交叉编译出 arm64 安卓二进制。
-#       Termux 已内置 `pkg install pixiewps`，本流程产出独立二进制供未来原生 APK 打包。
+# 触发：推送 v* 标签，或手动 dispatch
+# 说明：pixiewps 仅依赖 libc + pthread，可用 NDK clang 直接交叉编译出安卓二进制。
+#       bionic 提供 getopt_long（API 12+），故可正常编译。
 on:
   push:
     tags: ["v*"]
@@ -15,7 +15,7 @@ jobs:
       matrix:
         abi: [arm64-v8a, armeabi-v7a, x86_64]
     env:
-      NDK_VERSION: "r26d"
+      NDK_VER: r26d
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,36 +23,36 @@ jobs:
       - name: Clone pixiewps
         run: git clone --depth 1 https://github.com/wiire-a/pixiewps.git /tmp/pixiewps
 
-      - name: Set up Android NDK
-        uses: android-actions/setup-android@v3
-        # 使用官方 NDK（安装后 PATH 可用）
-      - name: Install NDK via sdkmanager
+      - name: Download Android NDK
         run: |
-          echo "y" | sdkmanager --install "ndk;${NDK_VERSION}" > /dev/null
-          echo "NDK_HOME=${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
+          curl -sSL -o /tmp/ndk.zip "https://dl.google.com/android/repository/android-ndk-${NDK_VER}-linux.zip"
+          unzip -q /tmp/ndk.zip -d /tmp
+          echo "NDK_HOME=/tmp/android-ndk-${NDK_VER}" >> "$GITHUB_ENV"
 
       - name: Map ABI to NDK clang triplet
         id: triplet
         shell: bash
         run: |
           case "${{ matrix.abi }}" in
-            arm64-v8a)   echo "triplet=aarch64-linux-android24" >> "$GITHUB_OUTPUT" ;;
-            armeabi-v7a) echo "triplet=armv7a-linux-androideabi24" >> "$GITHUB_OUTPUT" ;;
-            x86_64)      echo "triplet=x86_64-linux-android24" >> "$GITHUB_OUTPUT" ;;
+            arm64-v8a)   echo "triplet=aarch64-linux-android21" >> "$GITHUB_OUTPUT" ;;
+            armeabi-v7a) echo "triplet=armv7a-linux-androideabi21" >> "$GITHUB_OUTPUT" ;;
+            x86_64)      echo "triplet=x86_64-linux-android21" >> "$GITHUB_OUTPUT" ;;
           esac
 
       - name: Build pixiewps for ${{ matrix.abi }}
         run: |
           cd /tmp/pixiewps
-          CC="$ANDROID_SDK_ROOT/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ steps.triplet.outputs.triplet }}-clang"
+          CC="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ steps.triplet.outputs.triplet }}-clang"
           make clean
           make CC="$CC"
+          mkdir -p /tmp/out
+          cp pixiewps "/tmp/out/pixiewps-${{ matrix.abi }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pixiewps-${{ matrix.abi }}
-          path: /tmp/pixiewps/pixiewps
+          path: /tmp/out/pixiewps-${{ matrix.abi }}
 
   release:
     needs: [build-pixiewps-android]
@@ -62,6 +62,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
