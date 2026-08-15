@@ -572,13 +572,32 @@ def pixie_attack(
     start: Optional[int] = None,
     end: Optional[int] = None,
     verbosity: int = 0,
+    prefer_fast: bool = True,
 ) -> PixieResult:
     """执行 Pixie Dust 离线攻击。
 
     参数均为 hex 字符串（可含 ':' 分隔）：
       pke/pkr（192 字节）、e_hash1/e_hash2（32 字节）、e_nonce（16 字节）、
       authkey（32 字节，可选；若省略则需 r_nonce + e_bssid 且为 RTL/小 DH 场景）。
+
+    prefer_fast=True 时，若检测到 Rust 加速引擎（wcracking-engine）则优先走快速路径，
+    失败/不可用时自动回退纯 Python 实现。
     """
+    # 快速路径：优先使用 Rust 加速引擎（延迟导入避免循环依赖）
+    if prefer_fast:
+        try:
+            from . import fast_engine
+            if fast_engine.has_fast_engine():
+                fast_res = fast_engine.run_fast(
+                    pke=pke, pkr=pkr, e_hash1=e_hash1, e_hash2=e_hash2, e_nonce=e_nonce,
+                    authkey=authkey, r_nonce=r_nonce, e_bssid=e_bssid,
+                    mode=mode, force=force,
+                )
+                if fast_res is not None:
+                    return fast_res
+        except Exception:
+            pass
+
     res = PixieResult()
     t0 = time.time()
 

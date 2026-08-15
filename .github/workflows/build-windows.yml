@@ -26,10 +26,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
 
-      # 离线引擎为纯 Python（core/pixie_dust.py），打包为单个 exe，含 PyQt6 GUI
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Rust engine
+        working-directory: engine
+        run: cargo build --release
+
+      # 离线引擎为纯 Python（core/pixie_dust.py），打包为单个 exe，含 PyQt6 GUI；
+      # 同时把 Rust 加速引擎二进制一并打入（--add-binary），GUI 检测到即自动走快速路径。
       - name: Build GUI exe (PyInstaller)
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed --name WCracking --paths . desktop/app.py
+          pyinstaller --noconfirm --clean --onefile --windowed --name WCracking --paths . `
+            --add-binary "engine/target/release/wcracking-engine.exe;." desktop/app.py
         shell: pwsh
 
       - name: Upload artifact

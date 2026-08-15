@@ -46,11 +46,18 @@ jobs:
           unzip -q /tmp/gradle.zip -d /tmp
           echo "/tmp/gradle-8.5/bin" >> "$GITHUB_PATH"
 
-      - name: Build debug APK
+      - name: Generate release keystore
+        run: |
+          keytool -genkeypair -v -keystore android/app/app/release.keystore -alias wcracking \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass wcracking -keypass wcracking \
+            -dname "CN=WCracking,OU=WCracking,O=WCracking,L=Guangzhou,C=CN" 2>&1 | tail -3
+
+      - name: Build release APK
         working-directory: android/app
         run: |
           set +e
-          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee gradle-build.log
+          gradle assembleRelease --no-daemon --stacktrace 2>&1 | tee gradle-build.log
           exit ${PIPESTATUS[0]}
         shell: bash
 
@@ -65,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: WCracking-apk
-          path: android/app/app/build/outputs/apk/debug/*.apk
+          path: android/app/app/build/outputs/apk/release/*.apk
 
   release:
     needs: [build-apk]

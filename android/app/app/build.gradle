@@ -15,9 +15,20 @@ android {
         versionName "0.1.0"
     }
 
+    // release 签名：优先读环境变量，否则用仓库内 release.keystore（CI 用 keytool 生成）
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("KEYSTORE_FILE") ?: "release.keystore")
+            storePassword System.getenv("KEYSTORE_PASSWORD") ?: "wcracking"
+            keyAlias System.getenv("KEY_ALIAS") ?: "wcracking"
+            keyPassword System.getenv("KEY_PASSWORD") ?: "wcracking"
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
         }
     }
 

@@ -130,7 +130,10 @@ tsudo python OneShot/oneshot.py -i wlan0 -K               # -K = Pixie Dust
 ## Rust 加速引擎
 
 ECOS_SIMPLE（2^25 暴力）等模式在纯 Python 下较慢，提供 Rust 加速版（多线程，快数十倍），
-已与 Python 引擎逐值交叉验证（含公开测试向量，PIN=04847533）：
+已与 Python 引擎逐值交叉验证（含公开测试向量，PIN=04847533）。
+
+**自动快速路径**：Python 引擎 / 桌面 GUI 会检测 `wcracking-engine` 二进制，存在则自动走
+Rust 快速路径，失败/缺失时回退纯 Python——无需手动切换。
 
 ```bash
 cd engine && cargo build --release && cargo test --release

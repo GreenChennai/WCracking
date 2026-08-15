@@ -45,12 +45,28 @@
             android:text="Pixie Dust 攻击" />
     </LinearLayout>
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="扫描结果（点击填入 BSSID）"
+        android:textColor="#333333"
+        android:textSize="13sp" />
+
+    <ListView
+        android:id="@+id/lv_scan"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="4dp"
+        android:background="#fafafa" />
+
     <ScrollView
         android:id="@+id/scroll_log"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:background="#f5f5f5">
 
         <TextView
