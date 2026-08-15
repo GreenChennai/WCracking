@@ -18,6 +18,16 @@ dist/
 .vscode/
 .DS_Store
 
+# Rust 构建产物
+engine/target/
+
+# Android 构建产物
+android/app/.gradle/
+android/app/app/build/
+android/app/build/
+*.apk
+local.properties
+
 # 抓包临时数据
 *.run
 *.cap

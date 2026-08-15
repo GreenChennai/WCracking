@@ -1,0 +1,58 @@
+name: Build Rust Engine
+
+# 触发：推送 v* 标签，或手动 dispatch
+# 说明：Rust 加速引擎（ECOS_SIMPLE 等暴力模式多线程），纯 Rust 无 C 依赖，交叉编译即可。
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: wcracking-engine-linux
+          - os: windows-latest
+            artifact: wcracking-engine-windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build (release)
+        working-directory: engine
+        run: cargo build --release
+
+      - name: Run tests
+        working-directory: engine
+        run: cargo test --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            engine/target/release/wcracking-engine
+            engine/target/release/wcracking-engine.exe
+
+  release:
+    needs: [build]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          files: artifacts/**/*

@@ -1,0 +1,63 @@
+name: Build APK
+
+# 触发：推送 v* 标签，或手动 dispatch
+# 说明：原生安卓 APK（Kotlin 壳 + 内置 OneShot + libsu root）。实验性，可能需按 CI 日志迭代。
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK components
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+
+      - name: Download Gradle 8.7
+        run: |
+          curl -sSL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          echo "/tmp/gradle-8.7/bin" >> "$GITHUB_PATH"
+
+      - name: Build debug APK
+        working-directory: android/app
+        run: gradle assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: WCracking-apk
+          path: android/app/app/build/outputs/apk/debug/*.apk
+
+  release:
+    needs: [build-apk]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          files: artifacts/**/*

@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.WCracking" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">#238636</item>
+    </style>
+</resources>

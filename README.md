@@ -65,17 +65,26 @@ Windows 版负责 **离线破解引擎 + 控制器 GUI**：接收握手数据（
 WCracking/
 ├── core/
 │   ├── pixie_dust.py      # 离线 Pixie Dust 引擎（纯 Python，stdlib，已通过公开向量验证）
-│   └── m7_psk.py          # M7 加密设置解密 → 恢复 WPA-PSK（RTL 设备，需 AES）
+│   ├── aes.py             # 纯 Python AES-128-CBC（NIST 向量验证）
+│   ├── m7_psk.py          # M7 加密设置解密 → 恢复 WPA-PSK（RTL 设备）
+│   └── parser.py          # OneShot/reaver 输出解析器
+├── engine/                # Rust 加速引擎（ECOS_SIMPLE 等暴力模式多线程，快数十倍）
+│   └── src/{main,crypto,prng,crack}.rs
 ├── desktop/
-│   └── app.py             # PyQt6 桌面 GUI
+│   └── app.py             # PyQt6 桌面 GUI（含一键解析填充）
 ├── android/
-│   ├── README.md          # 安卓端完整方案（OneShot + Termux + root）
-│   └── install.sh         # Termux 一键安装脚本
+│   ├── README.md          # 安卓端完整方案（OneShot + Termux + root + Shizuku 调研）
+│   ├── install.sh         # Termux 一键安装脚本
+│   └── app/               # 原生安卓 APK 骨架（Kotlin 壳 + 内置 OneShot + libsu）
+├── linux/                 # Kali/树莓派支持（reaver/bully + 监听模式网卡）
+│   ├── install.sh
+│   ├── attack.sh
+│   └── README.md
 ├── tests/
 │   └── test_pixie_dust.py # 单元测试（含真实测试向量）
 ├── docs/
 │   └── attack-flow.md     # 攻击流程详解
-├── .github/workflows/     # CI：Windows exe + 安卓二进制/APK
+├── .github/workflows/     # CI：Windows exe / Rust 引擎 / Termux 工具包 / 原生 APK
 └── requirements.txt
 ```
 
@@ -118,6 +127,29 @@ tsudo python OneShot/oneshot.py -i wlan0 -K               # -K = Pixie Dust
 
 详见 [`android/README.md`](android/README.md)。
 
+## Rust 加速引擎
+
+ECOS_SIMPLE（2^25 暴力）等模式在纯 Python 下较慢，提供 Rust 加速版（多线程，快数十倍），
+已与 Python 引擎逐值交叉验证（含公开测试向量，PIN=04847533）：
+
+```bash
+cd engine && cargo build --release && cargo test --release
+./target/release/wcracking-engine \
+  -e <pke> -r <pkr> -s <h1> -z <h2> -a <authkey> -n <nonce> [--mode N] [-f]
+```
+
+## Linux 端（Kali / 树莓派）
+
+最可靠的主动攻击平台（USB 网卡监听模式 + reaver/bully），一键脚本：
+
+```bash
+bash linux/install.sh          # 装 aircrack-ng/reaver/bully/pixiewps
+bash linux/attack.sh wlan0             # 扫描 WPS 网络
+bash linux/attack.sh wlan0 <BSSID>     # 指定目标 Pixie Dust 攻击
+```
+
+详见 [`linux/README.md`](linux/README.md)。
+
 ## 硬件要求
 
 | 平台 | 要求 |
@@ -128,8 +160,14 @@ tsudo python OneShot/oneshot.py -i wlan0 -K               # -K = Pixie Dust
 
 ## 构建（GitHub Actions）
 
-- `.github/workflows/build-windows.yml`：编译 pixiewps（C）为 Windows exe + 打包 Python GUI。
-- `.github/workflows/build-android.yml`：NDK 交叉编译 pixiewps 安卓二进制 + OneShot APK 依赖。
+推送 `v*` 标签即自动构建并发布 Release（prerelease）：
+
+| Workflow | 产物 |
+|----------|------|
+| `build-windows.yml` | `WCracking.exe`（PyQt6 GUI，PyInstaller 单文件） |
+| `build-rust.yml` | `wcracking-engine`（Windows/Linux 加速引擎） |
+| `build-android.yml` | `WCracking-termux.zip`（Termux 工具包） |
+| `build-apk.yml` | `WCracking.apk`（原生 APK，实验性） |
 
 本地无 C 编译器时，直接推 tag 触发 Actions 即可。
 

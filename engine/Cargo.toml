@@ -1,0 +1,21 @@
+[package]
+name = "wcracking-engine"
+version = "1.0.0"
+edition = "2021"
+description = "WCracking 离线 Pixie Dust 破解引擎（Rust 加速版）"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+sha2 = "0.10"
+hmac = "0.12"
+num-bigint = "0.4"
+num-traits = "0.2"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[[bin]]
+name = "wcracking-engine"
+path = "src/main.rs"
