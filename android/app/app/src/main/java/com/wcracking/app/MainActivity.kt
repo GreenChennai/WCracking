@@ -75,12 +75,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun scan() {
         appendLog("[*] 扫描 WPS 网络（iw dev wlan0 scan）……")
-        runRoot("iw dev wlan0 scan") { line ->
+        runRoot("iw dev wlan0 scan", onLine = { line ->
             // 简易提取 BSSID / SSID
             if (line.contains("BSS ") || line.contains("SSID:")) {
                 appendLog("    $line.trim()")
             }
-        }
+        })
     }
 
     private fun attack() {
@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity() {
         appendLog("[*] 开始 Pixie Dust 攻击 $bssid ……")
         appendLog("[*] $cmd")
         btnAttack.isEnabled = false
-        runRoot(cmd, onDone = { code ->
+        runRoot(cmd, onLine = { appendLog(it) }, onDone = { code ->
             btnAttack.isEnabled = true
             appendLog(if (code == 0) "[+] 攻击结束" else "[-] 攻击结束（退出码 $code）")
         })
