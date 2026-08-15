@@ -40,15 +40,26 @@ jobs:
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
           sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
-      - name: Download Gradle 8.7
+      - name: Download Gradle 8.5
         run: |
-          curl -sSL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          curl -sSL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.5-bin.zip
           unzip -q /tmp/gradle.zip -d /tmp
-          echo "/tmp/gradle-8.7/bin" >> "$GITHUB_PATH"
+          echo "/tmp/gradle-8.5/bin" >> "$GITHUB_PATH"
 
       - name: Build debug APK
         working-directory: android/app
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: |
+          set +e
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee gradle-build.log
+          exit ${PIPESTATUS[0]}
+        shell: bash
+
+      - name: Upload build log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: android/app/gradle-build.log
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
